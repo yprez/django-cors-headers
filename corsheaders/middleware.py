@@ -59,7 +59,9 @@ class CorsMiddleware(MiddlewareMixin):
 
             try:
                 http_referer = request.META['HTTP_REFERER']
+                print('replace ', request.META['HTTP_HOST'], request.META['HTTP_X_FORWARDED_HOST'], request.META['SERVER_NAME'])
                 http_host = "https://%s/" % request.get_host()
+                print('replace ', http_host)
                 request.META = request.META.copy()
                 request.META['ORIGINAL_HTTP_REFERER'] = http_referer
                 request.META['HTTP_REFERER'] = http_host

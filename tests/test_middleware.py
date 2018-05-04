@@ -350,6 +350,7 @@ class CorsMiddlewareTests(TestCase):
 @override_settings(
     CORS_REPLACE_HTTPS_REFERER=True,
     CORS_ORIGIN_REGEX_WHITELIST=(r'.*example.*',),
+    ALLOWED_HOSTS=['*'],
 )
 class RefererReplacementCorsMiddlewareTests(TestCase):
 
@@ -363,6 +364,22 @@ class RefererReplacementCorsMiddlewareTests(TestCase):
         )
         assert resp.status_code == 200
         assert resp.wsgi_request.META['HTTP_REFERER'] == 'https://example.com/'
+        assert resp.wsgi_request.META['ORIGINAL_HTTP_REFERER'] == 'https://example.org/foo'
+
+    def test_get_replaces_referer_with_forwarded_host(self):
+        with override_settings(USE_X_FORWARDED_HOST=True):
+            resp = self.client.get(
+                '/',
+                HTTP_FAKE_SECURE='true',
+                HTTP_HOST='example.com',
+                HTTP_ORIGIN='https://example.org',
+                HTTP_REFERER='https://example.org/foo',
+                HTTP_X_FORWARDED_HOST='https://example.ninja',
+            )
+        print(resp)
+        print(resp.content)
+        assert resp.status_code == 200
+        assert resp.wsgi_request.META['HTTP_REFERER'] == 'https://example.ninja/'
         assert resp.wsgi_request.META['ORIGINAL_HTTP_REFERER'] == 'https://example.org/foo'
 
     @append_middleware('corsheaders.middleware.CorsPostCsrfMiddleware')
